@@ -1,3 +1,3 @@
-# Space for my bash experiments
+# Space for my code snippets, mainly experiments
 
-Bits and pieces of bash scripts/commands i have composed or found.
+Bits and pieces of scripts/commands i have composed in different languages or found / modified
