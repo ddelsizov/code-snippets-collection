@@ -1,42 +1,46 @@
 #!/bin/bash
 ######
-# Log collecting tool for MF NNMi Software.
-# This is configured specifically to set finest tracing for northbound.im which is responsible for NNMi - OMi event integration and other 3rd party software.
-# It will collect specific entries and stack traces in a new file for ease of tracing and diagnosing a problem -> /tmp/nortbound.txt
+# -> Zero copy-rights. Do whatever you want with it. Have fun. 
+#
+# Basic log collection and stack tracing automation sequence for MF NNMi software.
+# Provide nnm java module name (eg. com.hp.ov.nms.ui, com.hp.ov.nms.disco.analyzer.bn, etc.) and duration of tracing in minutes and let it work. 
+# It will setup FINEST for selected module, it will tail the nnm-trace.log based on the selection, it will also capture stack traces and write them in /tmp/${modulename}
+# Verify useful if you need to automate problem tracing and log collections.
+# Run the script with requiered parameters, then reproduce the problem observed / wait for problem to appear, check results in the filtered output in the resulted file in /tmp/
+#
+# 2021, ddelsizov@gmail.com
 #######
 
-# Cleanup from previous runs if any
-rm -f /tmp/northbound.txt
+echo -n "Provide module name to be set to FINEST:  "
+read -r modulename
 
-# Set neccessery FINEST levels
+echo -n "How long to trace? (minutes): "
+read -r minutes
 
-echo "** Setting FINEST logging for Northbound module **"
-/opt/OV/support/nnmsetlogginglevel.ovpl com.hp.ov.nnm.northbound.im FINEST
+# Set FINEST logging for selected module
+
+echo "** Setting FINEST logging for ${modulename} module **"
+/opt/OV/support/nnmsetlogginglevel.ovpl $modulename FINEST
 
 # Sleep a bit after command is executed
 
-echo "** Sleeping for 20s **"
-sleep 20
+echo "** Sleeping for 10s after setting FINEST **"
+sleep 10
 
-# Set variable for pattern matching in grep
-echo "** Setting pattern matching variable **"
+# Set variable for eval command. I expect that proper stack traces could be captured with it.
+echo "** Setting pattern matching variable for ${modulename} **"
+pattern='timeout -k 5 -s SIGKILL ${minutes}m tail -n0 -F /var/opt/OV/log/nnm/nnm-trace.log | grep --line-buffered -P "(|${modulename}|^\tat |Exception|^Caused by: |\t... \d+ more)" >> /tmp/${modulename}.txt'
 
-pattern='timeout -k 5 -s SIGKILL 10m tail -n0 -F /var/opt/OV/log/nnm/nnm-trace.log | grep --line-buffered -P "(|com.hp.ov.nms.northbound|com.hp.ov.nms.events|^\tat |Exception|^Caused by: |\t... \d+ more)" >> /tmp/northbound.txt'
-
-# Run tail against the log file with 10 minutes timeout, and graceful kill pass that.
-
-echo "** Running tail command with pattern-matching for grep for 10 minutes **"
+# Execute the tailing with eval the $pattern variable against the nnm-trace.log file with specified timeout, and graceful kill pass that period.
+echo "** Running tail command with pattern-matching for grep for ${minutes} minutes **"
 
 eval "$pattern"
 
 echo "** Log collection done **"
+echo "** Setting back INFO logging for ${modulename} module **"
+/opt/OV/support/nnmsetlogginglevel.ovpl $modulename INFO
 
-echo "** Sleeping for 20s before resetting the log level **"
-sleep 20
+echo "** Sleeping for 10s before resetting the log levels **"
+sleep 10
 
-# Reset log level back to normal
-
-echo "** Setting back INFO logging for Northbound module **"
-/opt/OV/support/nnmsetlogginglevel.ovpl com.hp.ov.nnm.northbound.im INFO
-
-echo "** Script ended, check /tmp/northbound.txt for results **"
+echo "** Script ended, check /tmp/${modulename}.txt for results **"
