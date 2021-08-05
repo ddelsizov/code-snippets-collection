@@ -40,7 +40,7 @@ echo "** Log collection done **"
 echo "** Setting back INFO logging for ${modulename} module **"
 /opt/OV/support/nnmsetlogginglevel.ovpl $modulename INFO
 
-echo "** Sleeping for 10s before resetting the log levels **"
+echo "** Sleeping for 10s after resetting the log levels **"
 sleep 10
 
 echo "** Script ended, check /tmp/${modulename}.txt for results **"
