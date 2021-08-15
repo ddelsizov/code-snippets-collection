@@ -16,7 +16,13 @@ from psycopg2.extras import NamedTupleCursor
 def get_nodes():
     conn = psycopg2.connect(dbname="nnm", host="localhost", user="postgres", password="nnmP0stgr3S", cursor_factory=NamedTupleCursor)
     cursor = conn.cursor()
-    cursor.execute("select nms_snmp_agent.name AS agent_name, nms_node.name AS node_name, nms_snmp_agent_settings.active_addr AS mgmt_addr from nms_snmp_agent JOIN nms_node on nms_snmp_agent.hosted_on=nms_node.id JOIN nms_snmp_agent_settings ON nms_snmp_agent.id=nms_snmp_agent_settings.id;")
+    cursor.execute("""select nms_snmp_agent.name as agent_name, 
+    nms_node.name as node_name, 
+    nms_snmp_agent_settings.active_addr as mgmt_addr 
+    from 
+    nms_snmp_agent 
+    JOIN nms_node on nms_snmp_agent.hosted_on=nms_node.id 
+    JOIN nms_snmp_agent_settings on nms_snmp_agent.id=nms_snmp_agent_settings.id;""")
     records_nodes = [row[0:3] for row in cursor.fetchall()]
     cursor.close()
     conn.close()
